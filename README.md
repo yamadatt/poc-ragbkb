@@ -11,6 +11,10 @@ AWS BedrockとOpenSearchを使用したRAG（Retrieval-Augmented Generation）�
 - 🤖 **AI回答生成**: AWS Bedrock Claude 3 Haikuで自然言語回答
 - 💬 **チャットインターフェース**: ReactベースのユーザーフレンドリーなUI
 
+
+![](docs/architecture-overview.webp)
+
+
 ## 📋 前提条件
 
 - AWS CLI (設定済み)
