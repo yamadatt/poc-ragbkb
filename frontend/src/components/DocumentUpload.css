@@ -1,0 +1,292 @@
+/* ========================================
+   DocumentUpload コンポーネントスタイル
+======================================== */
+.document-upload {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.upload-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.upload-header h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 0.5rem 0;
+}
+
+.upload-header p {
+  font-size: 0.95rem;
+  color: #6b7280;
+  margin: 0 0 1rem 0;
+  line-height: 1.5;
+}
+
+/* ========================================
+   APIステータス表示
+======================================== */
+.api-status {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.api-status.checking {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+.api-status.online {
+  background: #dcfdf4;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+.api-status.offline {
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+}
+
+/* ========================================
+   アップロードエリア
+======================================== */
+.upload-area {
+  border: 2px dashed #d1d5db;
+  border-radius: 0.75rem;
+  background: #fafbfc;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.upload-area:hover {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+
+.upload-area.uploading {
+  border-color: #059669;
+  background: #ecfdf5;
+  pointer-events: none;
+}
+
+.upload-label {
+  display: block;
+  padding: 3rem 2rem;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.upload-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.7;
+}
+
+.upload-text {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 0.5rem;
+}
+
+.upload-hint {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+/* ========================================
+   ファイル情報
+======================================== */
+.file-info {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin: 1rem 0;
+}
+
+.file-detail {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.file-name {
+  font-weight: 500;
+  color: #1f2937;
+  font-size: 0.95rem;
+}
+
+.file-size {
+  font-size: 0.875rem;
+  color: #6b7280;
+  background: #e5e7eb;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+}
+
+/* ========================================
+   プログレスバー
+======================================== */
+.progress-section {
+  margin: 1.5rem 0;
+}
+
+.progress-bar {
+  background: #e5e7eb;
+  border-radius: 0.5rem;
+  height: 8px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.progress-fill {
+  background: linear-gradient(90deg, #059669, #10b981);
+  height: 100%;
+  transition: width 0.3s ease;
+  border-radius: 0.5rem;
+}
+
+.progress-text {
+  text-align: center;
+  font-size: 0.875rem;
+  color: #059669;
+  font-weight: 500;
+}
+
+/* ========================================
+   ステータスメッセージ
+======================================== */
+.status-message {
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin: 1rem 0;
+  font-weight: 500;
+  text-align: center;
+}
+
+.status-message.success {
+  background: #dcfdf4;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+.status-message.error {
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+}
+
+/* ========================================
+   アクションボタン
+======================================== */
+.upload-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+.upload-button {
+  background: #2563eb;
+  color: white;
+  font-weight: 500;
+  min-width: 120px;
+}
+
+.upload-button:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
+.cancel-button {
+  background: #f3f4f6;
+  color: #6b7280;
+  border: 1px solid #d1d5db;
+  font-weight: 500;
+}
+
+.cancel-button:hover {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+/* ========================================
+   レスポンシブデザイン
+======================================== */
+@media (max-width: 640px) {
+  .document-upload {
+    max-width: 100%;
+  }
+  
+  .upload-label {
+    padding: 2rem 1rem;
+  }
+  
+  .upload-icon {
+    font-size: 2.5rem;
+  }
+  
+  .upload-text {
+    font-size: 1rem;
+  }
+  
+  .upload-actions {
+    flex-direction: column;
+  }
+  
+  .upload-button,
+  .cancel-button {
+    width: 100%;
+  }
+  
+  .file-detail {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-start;
+  }
+}
+
+/* ========================================
+   アニメーション効果
+======================================== */
+@keyframes uploadPulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.7; }
+  100% { opacity: 1; }
+}
+
+.upload-area.uploading .upload-icon {
+  animation: uploadPulse 1.5s ease-in-out infinite;
+}
+
+.upload-area.uploading::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(5, 150, 105, 0.1),
+    transparent
+  );
+  animation: shimmer 2s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}

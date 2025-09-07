@@ -1,0 +1,310 @@
+/* ========================================
+   QueryInput コンポーネントスタイル
+======================================== */
+.query-input {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.query-header {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.query-header h3 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 0.25rem 0;
+}
+
+.query-header p {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* ========================================
+   クエリフォーム
+======================================== */
+.query-form {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1rem;
+}
+
+.input-section {
+  margin-bottom: 0.75rem;
+}
+
+.question-input {
+  width: 100%;
+  min-height: 80px;
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  font-size: 0.95rem;
+  font-family: inherit;
+  line-height: 1.4;
+  color: #1f2937;
+  background: #ffffff;
+  resize: vertical;
+  transition: all 0.2s ease;
+}
+
+.question-input:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.question-input:disabled {
+  background: #f9fafb;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+.question-input.over-limit {
+  border-color: #dc2626;
+  background: #fef2f2;
+}
+
+.question-input.over-limit:focus {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
+.question-input::placeholder {
+  color: #9ca3af;
+}
+
+/* ========================================
+   入力フッター
+======================================== */
+.input-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.char-count {
+  color: #6b7280;
+}
+
+.char-count.over-limit {
+  color: #dc2626;
+  font-weight: 500;
+}
+
+.over-limit-text {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.input-hint {
+  color: #9ca3af;
+  font-style: italic;
+}
+
+/* ========================================
+   エラーメッセージ
+======================================== */
+.error-message {
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  font-weight: 500;
+  text-align: center;
+}
+
+/* ========================================
+   送信セクション
+======================================== */
+.submit-section {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  align-items: center;
+}
+
+.submit-button {
+  background: #2563eb;
+  color: white;
+  font-weight: 500;
+  font-size: 1rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  min-width: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.submit-button:hover:not(:disabled) {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.submit-button:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.clear-button {
+  background: #f3f4f6;
+  color: #6b7280;
+  border: 1px solid #d1d5db;
+  font-weight: 500;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.clear-button:hover {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+/* ローディングスピナー */
+.loading-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* ========================================
+   セッション情報
+======================================== */
+.session-info {
+  text-align: center;
+  margin-bottom: 0.75rem;
+}
+
+.session-info small {
+  color: #9ca3af;
+  font-size: 0.75rem;
+  background: #f9fafb;
+  padding: 0.2rem 0.6rem;
+  border-radius: 1rem;
+}
+
+/* ========================================
+   使い方のヒント
+======================================== */
+.usage-tips {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+}
+
+.usage-tips details {
+  cursor: pointer;
+}
+
+.usage-tips summary {
+  font-weight: 500;
+  color: #374151;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  user-select: none;
+}
+
+.usage-tips summary:hover {
+  color: #2563eb;
+}
+
+.usage-tips ul {
+  margin: 1rem 0 0 0;
+  padding-left: 1.5rem;
+}
+
+.usage-tips li {
+  color: #6b7280;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  margin-bottom: 0.5rem;
+}
+
+.usage-tips li:last-child {
+  margin-bottom: 0;
+}
+
+/* ========================================
+   レスポンシブデザイン
+======================================== */
+@media (max-width: 768px) {
+  .query-input {
+    max-width: 100%;
+  }
+  
+  .query-form {
+    padding: 1rem;
+  }
+  
+  .question-input {
+    min-height: 100px;
+    padding: 0.75rem;
+  }
+  
+  .input-footer {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-start;
+  }
+  
+  .submit-section {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .submit-button,
+  .clear-button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .query-header h3 {
+    font-size: 1.25rem;
+  }
+  
+  .query-header p {
+    font-size: 0.875rem;
+  }
+  
+  .question-input {
+    font-size: 0.95rem;
+    padding: 0.75rem;
+  }
+  
+  .submit-button {
+    font-size: 0.95rem;
+    padding: 0.75rem 1.25rem;
+  }
+}

@@ -1,0 +1,79 @@
+# SAM Configuration for RAG System - Tokyo Region Production Environment
+# This configuration is optimized for prod environment only
+
+version = 0.1
+
+[default]
+[default.global.parameters]
+stack_name = "poc-ragbkb-backend-prod"
+region = "ap-northeast-1"  # Tokyo Region
+
+[default.build.parameters]
+cached = true
+parallel = true
+
+[default.deploy.parameters]
+capabilities = "CAPABILITY_IAM"
+confirm_changeset = false  # Set to true for interactive confirmation
+resolve_s3 = true
+s3_prefix = "poc-ragbkb-backend-prod"
+region = "ap-northeast-1"
+image_repositories = []
+disable_rollback = false
+on_failure = "ROLLBACK"
+stack_name = "poc-ragbkb-backend-prod"
+
+# Parameter overrides for prod environment
+# Note: Dynamic values like table names will be provided via command line
+parameter_overrides = [
+    "Environment=prod"
+]
+
+# Tags for all resources
+tags = [
+    "Environment=prod",
+    "Project=poc-ragbkb", 
+    "ManagedBy=sam",
+    "Region=tokyo",
+    "Team=backend",
+    "CostCenter=production"
+]
+
+[default.local_start_api.parameters]
+warm_containers = "EAGER"
+
+[default.local_start_lambda.parameters]
+warm_containers = "EAGER"
+
+[default.local_invoke.parameters]
+warm_containers = "EAGER"
+
+# Production-specific settings
+[prod]
+[prod.global.parameters] 
+stack_name = "poc-ragbkb-backend-prod"
+region = "ap-northeast-1"
+
+[prod.deploy.parameters]
+capabilities = "CAPABILITY_IAM"
+confirm_changeset = true  # Always confirm in prod
+resolve_s3 = true
+s3_prefix = "poc-ragbkb-backend-prod"
+region = "ap-northeast-1"
+disable_rollback = false
+on_failure = "ROLLBACK"
+stack_name = "poc-ragbkb-backend-prod"
+
+parameter_overrides = [
+    "Environment=prod"
+]
+
+tags = [
+    "Environment=prod",
+    "Project=poc-ragbkb",
+    "ManagedBy=sam", 
+    "Region=tokyo",
+    "Team=backend",
+    "CostCenter=production",
+    "Owner=prod-team"
+]

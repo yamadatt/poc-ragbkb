@@ -1,0 +1,373 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: 'AWS RAG System API Gateway and Lambda'
+
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 512
+    Runtime: provided.al2023
+    Architectures:
+      - x86_64
+    Environment:
+      Variables:
+        GO_ENV: production
+
+Parameters:
+  Environment:
+    Type: String
+    Default: prod
+    AllowedValues:
+      - prod
+    Description: Only production environment is supported for deployment
+  
+  S3BucketName:
+    Type: String
+    Description: S3 bucket name for documents
+    Default: "poc-ragbkb-documents-prod"
+  
+  DocumentsTableName:
+    Type: String
+    Description: DynamoDB table name for documents
+    Default: "poc-ragbkb-documents-prod"
+  
+  QueriesTableName:
+    Type: String
+    Description: DynamoDB table name for queries
+    Default: "poc-ragbkb-queries-prod"
+  
+  ResponsesTableName:
+    Type: String
+    Description: DynamoDB table name for responses
+    Default: "poc-ragbkb-responses-prod"
+  
+  UploadSessionsTableName:
+    Type: String
+    Description: DynamoDB table name for upload sessions
+    Default: "poc-ragbkb-upload-sessions-prod"
+  
+  KnowledgeBaseId:
+    Type: String
+    Description: Bedrock Knowledge Base ID
+    Default: ""
+  
+  DataSourceId:
+    Type: String
+    Description: Bedrock Knowledge Base Data Source ID
+    Default: ""
+  
+  ModelId:
+    Type: String
+    Description: Bedrock Model ID for RAG queries
+    Default: "anthropic.claude-3-haiku-20240307-v1:0"
+
+Resources:
+  # Lambda Function
+  RAGApiFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: makefile
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-api-function'
+      CodeUri: ./
+      Handler: bootstrap
+      Environment:
+        Variables:
+          S3_BUCKET_NAME: !Ref S3BucketName
+          DOCUMENTS_TABLE_NAME: !Ref DocumentsTableName
+          QUERIES_TABLE_NAME: !Ref QueriesTableName
+          RESPONSES_TABLE_NAME: !Ref ResponsesTableName
+          UPLOAD_SESSIONS_TABLE_NAME: !Ref UploadSessionsTableName
+          KNOWLEDGE_BASE_ID: !Ref KnowledgeBaseId
+          DATA_SOURCE_ID: !Ref DataSourceId
+          MODEL_ID: !Ref ModelId
+      Events:
+        # Health Check
+        HealthCheck:
+          Type: Api
+          Properties:
+            RestApiId: !Ref RAGApi
+            Path: /health
+            Method: GET
+        
+        # Documents endpoints
+        ListDocuments:
+          Type: Api
+          Properties:
+            RestApiId: !Ref RAGApi
+            Path: /documents
+            Method: GET
+        
+        CreateDocument:
+          Type: Api
+          Properties:
+            RestApiId: !Ref RAGApi
+            Path: /documents
+            Method: POST
+        
+        GetDocument:
+          Type: Api
+          Properties:
+            RestApiId: !Ref RAGApi
+            Path: /documents/{documentId}
+            Method: GET
+        
+        DeleteDocument:
+          Type: Api
+          Properties:
+            RestApiId: !Ref RAGApi
+            Path: /documents/{documentId}
+            Method: DELETE
+        
+        CompleteUpload:
+          Type: Api
+          Properties:
+            RestApiId: !Ref RAGApi
+            Path: /documents/{documentId}/complete-upload
+            Method: POST
+        
+        # Query endpoints
+        CreateQuery:
+          Type: Api
+          Properties:
+            RestApiId: !Ref RAGApi
+            Path: /queries
+            Method: POST
+        
+        GetQueryHistory:
+          Type: Api
+          Properties:
+            RestApiId: !Ref RAGApi
+            Path: /queries/{sessionId}/history
+            Method: GET
+
+      Policies:
+        - S3FullAccessPolicy:
+            BucketName: !Ref S3BucketName
+        - DynamoDBCrudPolicy:
+            TableName: !Ref DocumentsTableName
+        - DynamoDBCrudPolicy:
+            TableName: !Ref QueriesTableName
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ResponsesTableName
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UploadSessionsTableName
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - bedrock:InvokeModel
+                - bedrock:Retrieve
+                - bedrock:RetrieveAndGenerate
+                - bedrock:InvokeAgent
+                - bedrock:StartIngestionJob
+                - bedrock:GetIngestionJob
+                - bedrock:ListIngestionJobs
+              Resource: '*'
+            - Effect: Allow
+              Action:
+                - logs:CreateLogGroup
+                - logs:CreateLogStream
+                - logs:PutLogEvents
+              Resource: '*'
+
+  # API Gateway
+  RAGApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: !Sub '${AWS::StackName}-api'
+      StageName: !Ref Environment
+      Cors:
+        AllowMethods: "'GET,POST,DELETE,PUT,PATCH,OPTIONS'"
+        AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent'"
+        AllowOrigin: "'*'"
+        AllowCredentials: false
+      DefinitionBody:
+        openapi: '3.0.1'
+        info:
+          title: AWS RAG System API
+          version: '1.0'
+        paths:
+          /health:
+            get:
+              responses:
+                '200':
+                  description: 'Health check response'
+              x-amazon-apigateway-integration:
+                type: aws_proxy
+                httpMethod: POST
+                uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${RAGApiFunction.Arn}/invocations'
+            options:
+              responses:
+                '200':
+                  description: 'CORS preflight response'
+                  headers:
+                    Access-Control-Allow-Origin:
+                      type: string
+                    Access-Control-Allow-Methods:
+                      type: string
+                    Access-Control-Allow-Headers:
+                      type: string
+              x-amazon-apigateway-integration:
+                type: mock
+                requestTemplates:
+                  application/json: '{"statusCode": 200}'
+                responses:
+                  default:
+                    statusCode: 200
+                    responseParameters:
+                      method.response.header.Access-Control-Allow-Origin: "'*'"
+                      method.response.header.Access-Control-Allow-Methods: "'GET,POST,PUT,DELETE,PATCH,OPTIONS,HEAD'"
+                      method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent'"
+          /documents:
+            get:
+              responses:
+                '200':
+                  description: 'List documents response'
+              x-amazon-apigateway-integration:
+                type: aws_proxy
+                httpMethod: POST
+                uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${RAGApiFunction.Arn}/invocations'
+            post:
+              responses:
+                '201':
+                  description: 'Create document response'
+              x-amazon-apigateway-integration:
+                type: aws_proxy
+                httpMethod: POST
+                uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${RAGApiFunction.Arn}/invocations'
+            options:
+              responses:
+                '200':
+                  description: 'CORS preflight response'
+                  headers:
+                    Access-Control-Allow-Origin:
+                      type: string
+                    Access-Control-Allow-Methods:
+                      type: string
+                    Access-Control-Allow-Headers:
+                      type: string
+              x-amazon-apigateway-integration:
+                type: mock
+                requestTemplates:
+                  application/json: '{"statusCode": 200}'
+                responses:
+                  default:
+                    statusCode: 200
+                    responseParameters:
+                      method.response.header.Access-Control-Allow-Origin: "'*'"
+                      method.response.header.Access-Control-Allow-Methods: "'GET,POST,PUT,DELETE,PATCH,OPTIONS,HEAD'"
+                      method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent'"
+          '/documents/{documentId}':
+            get:
+              parameters:
+                - name: documentId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+              responses:
+                '200':
+                  description: 'Get document response'
+              x-amazon-apigateway-integration:
+                type: aws_proxy
+                httpMethod: POST
+                uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${RAGApiFunction.Arn}/invocations'
+            delete:
+              parameters:
+                - name: documentId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+              responses:
+                '204':
+                  description: 'Delete document response'
+              x-amazon-apigateway-integration:
+                type: aws_proxy
+                httpMethod: POST
+                uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${RAGApiFunction.Arn}/invocations'
+          '/documents/{documentId}/complete-upload':
+            post:
+              parameters:
+                - name: documentId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+              responses:
+                '200':
+                  description: 'Complete upload response'
+              x-amazon-apigateway-integration:
+                type: aws_proxy
+                httpMethod: POST
+                uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${RAGApiFunction.Arn}/invocations'
+          /queries:
+            post:
+              responses:
+                '201':
+                  description: 'Create query response'
+              x-amazon-apigateway-integration:
+                type: aws_proxy
+                httpMethod: POST
+                uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${RAGApiFunction.Arn}/invocations'
+            options:
+              responses:
+                '200':
+                  description: 'CORS preflight response'
+                  headers:
+                    Access-Control-Allow-Origin:
+                      type: string
+                    Access-Control-Allow-Methods:
+                      type: string
+                    Access-Control-Allow-Headers:
+                      type: string
+              x-amazon-apigateway-integration:
+                type: mock
+                requestTemplates:
+                  application/json: '{"statusCode": 200}'
+                responses:
+                  default:
+                    statusCode: 200
+                    responseParameters:
+                      method.response.header.Access-Control-Allow-Origin: "'*'"
+                      method.response.header.Access-Control-Allow-Methods: "'GET,POST,PUT,DELETE,PATCH,OPTIONS,HEAD'"
+                      method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent'"
+          '/queries/{sessionId}/history':
+            get:
+              parameters:
+                - name: sessionId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+              responses:
+                '200':
+                  description: 'Get query history response'
+              x-amazon-apigateway-integration:
+                type: aws_proxy
+                httpMethod: POST
+                uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${RAGApiFunction.Arn}/invocations'
+
+  # Lambda permissions for API Gateway
+  RAGApiFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref RAGApiFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${RAGApi}/*/*'
+
+
+Outputs:
+  RAGApiUrl:
+    Description: "API Gateway endpoint URL"
+    Value: !Sub "https://${RAGApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}"
+    Export:
+      Name: !Sub "${AWS::StackName}-api-url"
+  
+  RAGApiFunctionArn:
+    Description: "Lambda Function ARN"
+    Value: !GetAtt RAGApiFunction.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-function-arn"

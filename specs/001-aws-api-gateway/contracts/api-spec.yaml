@@ -1,0 +1,451 @@
+openapi: 3.0.3
+info:
+  title: AWS RAG System API
+  description: API for document upload and question answering using Bedrock Knowledge Base
+  version: 0.1.0
+servers:
+  - url: https://api.poc-ragbkb.example.com/v1
+    description: Production API Gateway
+  - url: http://localhost:8080/v1
+    description: Local development server
+
+paths:
+  /documents:
+    get:
+      summary: List uploaded documents
+      description: Retrieve list of all uploaded documents with their status
+      tags:
+        - Documents
+      responses:
+        '200':
+          description: List of documents
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  documents:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Document'
+                  total:
+                    type: integer
+                    example: 42
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      summary: Initiate document upload
+      description: Create upload session for document upload to S3
+      tags:
+        - Documents
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - fileName
+                - fileSize
+                - fileType
+              properties:
+                fileName:
+                  type: string
+                  minLength: 1
+                  maxLength: 255
+                  example: "knowledge-base.md"
+                fileSize:
+                  type: integer
+                  minimum: 1
+                  maximum: 52428800  # 50MB
+                  example: 2048576
+                fileType:
+                  type: string
+                  enum: ["txt", "md"]
+                  example: "md"
+      responses:
+        '201':
+          description: Upload session created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadSession'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /documents/{documentId}:
+    get:
+      summary: Get document details
+      description: Retrieve specific document information and status
+      tags:
+        - Documents
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Document details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      summary: Delete document
+      description: Remove document from Knowledge Base and S3 storage
+      tags:
+        - Documents
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Document deleted successfully
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /documents/{documentId}/complete-upload:
+    post:
+      summary: Complete document upload
+      description: Notify system that S3 upload is complete and start Knowledge Base processing
+      tags:
+        - Documents
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Upload completion acknowledged
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /queries:
+    post:
+      summary: Submit question
+      description: Submit natural language question for RAG processing
+      tags:
+        - Queries
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - question
+                - sessionId
+              properties:
+                question:
+                  type: string
+                  minLength: 1
+                  maxLength: 1000
+                  example: "AWS Bedrock Knowledge Baseの使い方を教えてください"
+                sessionId:
+                  type: string
+                  format: uuid
+                  example: "550e8400-e29b-41d4-a716-446655440000"
+      responses:
+        '201':
+          description: Query submitted and processed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  query:
+                    $ref: '#/components/schemas/Query'
+                  response:
+                    $ref: '#/components/schemas/Response'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          description: No relevant documents found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "関連情報が見つかりません"
+                  query:
+                    $ref: '#/components/schemas/Query'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /queries/{sessionId}/history:
+    get:
+      summary: Get session query history
+      description: Retrieve question-answer history for a browser session
+      tags:
+        - Queries
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 20
+      responses:
+        '200':
+          description: Query history
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  queries:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        query:
+                          $ref: '#/components/schemas/Query'
+                        response:
+                          $ref: '#/components/schemas/Response'
+                  total:
+                    type: integer
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /health:
+    get:
+      summary: Health check
+      description: API health status and dependency checks
+      tags:
+        - System
+      responses:
+        '200':
+          description: System healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "healthy"
+                  timestamp:
+                    type: string
+                    format: date-time
+                  dependencies:
+                    type: object
+                    properties:
+                      s3:
+                        type: string
+                        example: "connected"
+                      bedrock:
+                        type: string
+                        example: "connected"
+                      dynamodb:
+                        type: string
+                        example: "connected"
+        '503':
+          description: System unhealthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "unhealthy"
+                  errors:
+                    type: array
+                    items:
+                      type: string
+
+components:
+  schemas:
+    Document:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        fileName:
+          type: string
+          example: "knowledge-base.md"
+        fileSize:
+          type: integer
+          example: 2048576
+        fileType:
+          type: string
+          enum: ["txt", "md"]
+          example: "md"
+        uploadedAt:
+          type: string
+          format: date-time
+          example: "2025-09-04T10:30:00Z"
+        status:
+          type: string
+          enum: ["uploading", "processing", "ready", "error"]
+          example: "ready"
+        errorMsg:
+          type: string
+          example: null
+
+    UploadSession:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440001"
+        fileName:
+          type: string
+          example: "knowledge-base.md"
+        fileSize:
+          type: integer
+          example: 2048576
+        fileType:
+          type: string
+          enum: ["txt", "md"]
+          example: "md"
+        uploadUrl:
+          type: string
+          format: uri
+          example: "https://s3.amazonaws.com/bucket/path?X-Amz-Signature=..."
+        expiresAt:
+          type: string
+          format: date-time
+          example: "2025-09-04T11:30:00Z"
+
+    Query:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440002"
+        question:
+          type: string
+          example: "AWS Bedrock Knowledge Baseの使い方を教えてください"
+        timestamp:
+          type: string
+          format: date-time
+          example: "2025-09-04T10:35:00Z"
+        sessionId:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        status:
+          type: string
+          enum: ["processing", "completed", "error"]
+          example: "completed"
+
+    Response:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440003"
+        answer:
+          type: string
+          example: "AWS Bedrock Knowledge Baseは、企業の文書を自動的にベクトル化し、RAG（Retrieval Augmented Generation）システムを構築するためのマネージドサービスです。"
+        sources:
+          type: array
+          items:
+            $ref: '#/components/schemas/SourceDocument'
+        timestamp:
+          type: string
+          format: date-time
+          example: "2025-09-04T10:35:05Z"
+        processingTimeMs:
+          type: integer
+          example: 3200
+
+    SourceDocument:
+      type: object
+      properties:
+        documentId:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        fileName:
+          type: string
+          example: "bedrock-guide.md"
+        excerpt:
+          type: string
+          example: "Bedrock Knowledge Baseを使用することで、企業文書を効率的に検索・活用できます..."
+        confidence:
+          type: number
+          format: float
+          minimum: 0.0
+          maximum: 1.0
+          example: 0.85
+
+  responses:
+    BadRequest:
+      description: Invalid request parameters
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Invalid file size. Maximum 50MB allowed."
+              details:
+                type: object
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Document not found"
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Internal server error"
+              requestId:
+                type: string
+                format: uuid
