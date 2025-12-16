@@ -2,20 +2,40 @@
 
 AWS BedrockとOpenSearchを使用したRAG（Retrieval-Augmented Generation）システムのProof of Conceptです。
 
-## 🚀 概要
+## 概要
 
-このシステムは以下の機能を提供します：
+このシステムは以下の機能を提供します。
 
-- 📄 **文書アップロード**: PDFやテキストファイルをS3にアップロード
-- 🔍 **文書検索**: OpenSearch Serverlessでベクトル検索
-- 🤖 **AI回答生成**: AWS Bedrock Claude 3 Haikuで自然言語回答
-- 💬 **チャットインターフェース**: ReactベースのユーザーフレンドリーなUI
+- 文書アップロード: PDFやテキストファイルをS3にアップロード
+- 文書検索: OpenSearch Serverlessでベクトル検索
+- AI回答生成: AWS Bedrock Claude 3 Haikuで自然言語回答
+- チャットインターフェース: ReactベースのユーザーフレンドリーなUI
 
 
 ![](docs/architecture-overview.webp)
 
+また、サブテーマとしてAIにドキュメントやコーディングします。使用したのは以下のツール類です。AIエージェントが作ったファイル類も参考としてリポジトリに格納しています。
 
-## 📋 前提条件
+- AWS Kiro: 要件や仕様をまとめる
+- Claude Code: コーディングエージェント
+
+## 実際の画面
+
+実際の画面イメージは以下です。
+
+### ダッシュボード
+
+![](image.png)
+
+### チャット
+
+![](image-1.png)
+
+### ドキュメント管理
+
+![alt text](image-2.png)
+
+## 前提条件
 
 - AWS CLI (設定済み)
 - AWS SAM CLI
@@ -29,7 +49,7 @@ AWS BedrockとOpenSearchを使用したRAG（Retrieval-Augmented Generation）�
   - DynamoDB
   - S3
 
-## 🏗️ アーキテクチャ
+## アーキテクチャ
 
 ```
 フロントエンド (React) → API Gateway → Lambda (Go) → Bedrock Knowledge Base → OpenSearch Serverless
@@ -39,7 +59,7 @@ AWS BedrockとOpenSearchを使用したRAG（Retrieval-Augmented Generation）�
                                       S3 (文書保存)
 ```
 
-## 🔧 セットアップ手順
+## セットアップ手順
 
 ### 1. リポジトリのクローン
 
@@ -50,7 +70,7 @@ cd poc-ragbkb
 
 ### 2. OpenSearch Serverless コレクションの作成
 
-これが最も重要で複雑な手順です。以下を順番に実行してください。
+以下を順番に実行します。
 
 #### 2.1 OpenSearch Serverless コレクションの作成
 
@@ -137,12 +157,10 @@ aws opensearchserverless batch-get-collection --names "poc-ragbkb-knowledge"
 
 エンドポイントURLをメモしてください（例: `https://xxxxx.ap-northeast-1.aoss.amazonaws.com`）
 
-#### 2.4 ⚠️ 重要：インデックス作成
-
-**この手順が最も重要で、多くの人がつまずく部分です。**
+#### 2.4 重要：インデックス作成
 
 OpenSearchコレクションが作成されただけでは、ベクトル検索用のインデックスは存在しません。
-Knowledge Baseが正常に動作するために、**事前に正しい設定でインデックスを作成する必要があります**。
+Knowledge Baseが正常に動作するために、事前に正しい設定でインデックスを作成する必要があります。
 
 以下のスクリプトを使用してインデックスを作成します：
 
@@ -193,9 +211,9 @@ curl -X PUT \
   }'
 
 if [ $? -eq 0 ]; then
-    echo "✅ インデックス作成成功"
+    echo "インデックス作成成功"
 else
-    echo "❌ インデックス作成失敗"
+    echo "インデックス作成失敗"
     exit 1
 fi
 
@@ -209,7 +227,7 @@ EOF
 chmod +x create_index.sh
 ```
 
-**重要な設定説明：**
+重要な設定説明：
 
 - `dimension: 1536`: Amazon Titan Embedding モデルのベクトル次元数
 - `bedrock-knowledge-base-default-vector`: ベクトルフィールド名（Bedrockのデフォルト）
@@ -220,11 +238,9 @@ chmod +x create_index.sh
 ./create_index.sh
 ```
 
-**トラブルシューティング:**
+トラブルシューティング:
 
-1. **401 Unauthorized**: セキュリティポリシーを確認
-2. **Dimension mismatch**: 使用するEmbeddingモデルに合わせてdimensionを調整
-3. **Index already exists**: 既存インデックスを削除するか、別名を使用
+1. 401 Unauthorized: セキュリティポリシーを確認
 
 ### 3. Bedrock Knowledge Baseの作成
 
@@ -386,7 +402,7 @@ npm run build
 aws s3 sync dist/ s3://your-frontend-bucket/
 ```
 
-## 📊 動作確認
+## 動作確認
 
 ### 1. システムの動作確認
 
@@ -418,7 +434,7 @@ aws bedrock-agent get-ingestion-job \
     --ingestion-job-id <JOB_ID>
 ```
 
-## 🔍 トラブルシューティング
+## トラブルシューティング
 
 ### よくある問題と解決方法
 
@@ -426,13 +442,13 @@ aws bedrock-agent get-ingestion-job \
 ```
 Error: Index not found or incompatible mapping
 ```
-**解決方法**: インデックス作成手順を再度実行し、フィールドマッピングを確認
+解決方法: インデックス作成手順を再度実行し、フィールドマッピングを確認
 
 #### 2. Knowledge Base接続エラー
 ```
 Error: Unable to connect to OpenSearch collection  
 ```
-**解決方法**: 
+解決方法: 
 - セキュリティポリシーでBedrockロールに権限付与
 - コレクションエンドポイントの確認
 
@@ -440,18 +456,10 @@ Error: Unable to connect to OpenSearch collection
 ```
 Error: Ingestion job failed
 ```
-**解決方法**:
+解決方法:
 - S3バケット権限の確認
 - 文書形式の確認（PDF、TXT、DOCX対応）
 - ファイルサイズの確認（50MB以下）
-
-#### 4. 日本語回答が英語で返される
-```
-日本語で質問したが英語で回答が返る
-```
-**解決方法**: 
-- プロンプトで日本語回答を明示的に指示（修正済み）
-- Claude 3 Haikuモデルの確認
 
 ### デバッグ用コマンド
 
@@ -471,7 +479,7 @@ aws opensearchserverless batch-get-collection --names "poc-ragbkb-knowledge"
 aws bedrock-agent get-knowledge-base --knowledge-base-id <KB_ID>
 ```
 
-## 📝 設定ファイルサンプル
+## 設定ファイルサンプル
 
 ### backend/samconfig.toml (参考)
 ```toml
@@ -486,30 +494,12 @@ region = "ap-northeast-1"
 capabilities = "CAPABILITY_IAM"
 parameter_overrides = "KnowledgeBaseId=XXXXX DataSourceId=YYYYY"
 ```
-
-## 🚀 本番運用時の考慮事項
-
-1. **セキュリティ**
-   - CORS設定の制限（特定ドメインのみ）
-   - IAMロールの最小権限設定
-   - API Gatewayの認証設定
-
-2. **コスト最適化**
-   - Lambda の同時実行数制限
-   - OpenSearch のインデックス戦略
-   - Bedrock の使用量監視
-
-3. **監視**
-   - CloudWatch ダッシュボード設定
-   - アラーム設定（エラー率、レスポンス時間）
-   - コスト監視アラート
-
-## 🤝 コントリビューション
+## コントリビューション
 
 1. Issue の作成
 2. Feature branch の作成
 3. Pull Request の送信
 
-## 📄 ライセンス
+## ライセンス
 
 MIT License

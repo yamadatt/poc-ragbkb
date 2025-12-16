@@ -35,6 +35,7 @@ build/
 # OS
 .DS_Store
 Thumbs.db
+._*
 
 # Logs
 *.log
@@ -47,3 +48,9 @@ coverage/
 # Temporary files
 *.tmp
 *.temp
+
+# AI
+memory/
+.serena/
+
+
